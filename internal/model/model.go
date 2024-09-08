@@ -12,9 +12,10 @@ type Item struct {
 }
 
 type Source struct {
-	ID      int64
-	Name    string
-	FeedUrl string
+	ID        int64
+	Name      string
+	FeedUrl   string
+	CreatedAt time.Time
 }
 
 type Article struct {
