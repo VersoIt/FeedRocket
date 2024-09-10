@@ -14,6 +14,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
 	"os"
@@ -28,7 +29,12 @@ func main() {
 		return
 	}
 
-	db, err := sqlx.Connect(config.Get().DbConfig.Driver, getDSN(config.Get().DbConfig.Driver, "feed_rocket_bot", "postgres", "postgres", config.Get().DbConfig.Address, "disable", config.Get().DbConfig.Port))
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Error loading .env file")
+		return
+	}
+
+	db, err := sqlx.Connect(config.Get().DbConfig.Driver, getDSN(config.Get().DbConfig.Driver, os.Getenv("DB_NAME"), os.Getenv("DB_LOGIN"), os.Getenv("DB_PASSWORD"), config.Get().DbConfig.Address, os.Getenv("DB_SSLMODE"), config.Get().DbConfig.Port))
 	if err != nil {
 		log.Printf("Failed to connect to database: %v", err)
 		return
