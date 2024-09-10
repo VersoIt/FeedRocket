@@ -17,7 +17,7 @@ import (
 
 type ArticleProvider interface {
 	AllNotPosted(ctx context.Context, since time.Time, limit uint64) ([]model.Article, error)
-	MarkPosted(ctx context.Context, article model.Article) error
+	MarkPosted(ctx context.Context, id int64) error
 }
 
 type Summarizer interface {
@@ -50,6 +50,26 @@ func New(articleProvider ArticleProvider,
 	}
 }
 
+func (n *Notifier) Start(ctx context.Context) error {
+	ticker := time.NewTicker(n.sendInterval)
+	defer ticker.Stop()
+
+	if err := n.SelectAndSendArticle(ctx); err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if err := n.SelectAndSendArticle(ctx); err != nil {
+				return err
+			}
+		}
+	}
+}
+
 func (n *Notifier) SelectAndSendArticle(ctx context.Context) error {
 	topOneArticles, err := n.articles.AllNotPosted(ctx, time.Now().Add(-n.lookupTimeWindow), 1)
 	if err != nil {
@@ -61,7 +81,7 @@ func (n *Notifier) SelectAndSendArticle(ctx context.Context) error {
 	}
 
 	article := topOneArticles[0]
-	summary, err := n.summarizer.extractSummary(ctx, article.Title)
+	summary, err := n.summarizer.Summarize(ctx, article.Title)
 	if err != nil {
 		return err
 	}
@@ -70,14 +90,16 @@ func (n *Notifier) SelectAndSendArticle(ctx context.Context) error {
 		return err
 	}
 
-	return n.articles.MarkPosted(ctx, article)
+	log.Printf("article posted: %s", article.Title)
+
+	return n.articles.MarkPosted(ctx, article.ID)
 }
 
 func (n *Notifier) sendArticle(article model.Article, summary string) error {
 	const msgFormat = "*%s*%s\n\n%s"
 
 	msg := tgbotapi.NewMessage(n.channelId, fmt.Sprintf(msgFormat, markup.EscapeForMarkdown(article.Title), markup.EscapeForMarkdown(summary), markup.EscapeForMarkdown(article.Link)))
-	msg.ParseMode = tgbotapi.ModeMarkdown
+	msg.ParseMode = tgbotapi.ModeMarkdownV2
 	_, err := n.bot.Send(msg)
 	if err != nil {
 		return err

@@ -1,0 +1,17 @@
+bot:
+  token: 7520968914:AAFiBuE3drqDo5tuMM18wvBDQfean-ayOeM
+  channel_id: -1002423126917
+
+db:
+  driver: 'postgres'
+  address: 'localhost'
+  port: 5432
+
+openai:
+  key: ''
+  prompt: ''
+
+server:
+  fetch_interval: '10m'
+  notification_interval: '1m'
+  filterKeywords: []

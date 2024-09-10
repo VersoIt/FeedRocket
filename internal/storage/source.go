@@ -3,6 +3,7 @@ package storage
 import (
 	"FeedRocket/internal/model"
 	"context"
+	"errors"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"log"
@@ -13,10 +14,14 @@ type SourcePostgresStorage struct {
 	db *sqlx.DB
 }
 
+func NewSourceStorage(db *sqlx.DB) *SourcePostgresStorage {
+	return &SourcePostgresStorage{db: db}
+}
+
 func (s *SourcePostgresStorage) Sources(ctx context.Context) ([]model.Source, error) {
 	conn, err := s.db.Connx(ctx)
 	if err != nil {
-
+		return nil, err
 	}
 	defer closeConnection(conn)
 
@@ -80,6 +85,26 @@ func (s *SourcePostgresStorage) Delete(ctx context.Context, id int64) error {
 	if _, err := conn.ExecContext(ctx, "DELETE FROM sources WHERE id = $1", id); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (s *SourcePostgresStorage) UpdateSource(ctx context.Context, source *model.Source) error {
+	if source == nil {
+		return errors.New("source is nil")
+	}
+
+	conn, err := s.db.Connx(ctx)
+	if err != nil {
+		return err
+	}
+	defer closeConnection(conn)
+
+	if _, err := conn.ExecContext(ctx, "UPDATE sources SET name = $1, feed_url = $2 WHERE id = $3", source.Name, source.FeedUrl, source.ID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func closeConnection(conn *sqlx.Conn) {

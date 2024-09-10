@@ -53,6 +53,7 @@ func (f *Fetcher) Fetch(ctx context.Context) error {
 	}
 
 	var wg sync.WaitGroup
+	log.Println("starting fetching...")
 	for _, src := range sources {
 		wg.Add(1)
 		rssSource := source.NewRSSSourceFromModel(src)

@@ -3,6 +3,7 @@ package storage
 import (
 	"FeedRocket/internal/model"
 	"context"
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"time"
@@ -51,7 +52,7 @@ func (s *ArticlePostgresStorage) AllNotPosted(ctx context.Context, since time.Ti
 			Title:       article.Title,
 			Link:        article.Link,
 			Summary:     article.Summary,
-			PostedAt:    article.PostedAt,
+			PostedAt:    article.PostedAt.Time,
 			PublishedAt: article.PublishedAt,
 			CreatedAt:   article.CreatedAt,
 		}
@@ -72,12 +73,12 @@ func (s *ArticlePostgresStorage) MarkPosted(ctx context.Context, id int64) error
 }
 
 type dbArticle struct {
-	ID          int64     `db:"id"`
-	SourceId    int64     `db:"source_id"`
-	Title       string    `db:"title"`
-	Link        string    `db:"link"`
-	Summary     string    `db:"summary"`
-	PostedAt    time.Time `db:"posted_at"`
-	PublishedAt time.Time `db:"published_at"`
-	CreatedAt   time.Time `db:"created_at"`
+	ID          int64        `db:"id"`
+	SourceId    int64        `db:"source_id"`
+	Title       string       `db:"title"`
+	Link        string       `db:"link"`
+	Summary     string       `db:"summary"`
+	PostedAt    sql.NullTime `db:"posted_at"`
+	PublishedAt time.Time    `db:"published_at"`
+	CreatedAt   time.Time    `db:"created_at"`
 }

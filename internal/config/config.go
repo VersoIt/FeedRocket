@@ -1,22 +1,41 @@
 package config
 
 import (
-	"github.com/cristalhq/aconfig"
-	"github.com/cristalhq/aconfig/aconfighcl"
+	"gopkg.in/yaml.v3"
+	"io"
 	"log"
+	"os"
 	"sync"
 	"time"
 )
 
+type DbConfig struct {
+	Driver  string `yaml:"driver"`
+	Address string `yaml:"address"`
+	Port    int    `yaml:"port"`
+}
+
+type BotConfig struct {
+	Token     string `yaml:"token"`
+	ChannelId int64  `yaml:"channel_id"`
+}
+
+type OpenAiConfig struct {
+	Prompt string `yaml:"prompt"`
+	Key    string `yaml:"key"`
+}
+
+type ServerConfig struct {
+	FetchInterval        time.Duration `yaml:"fetch_interval"`
+	NotificationInterval time.Duration `yaml:"notification_interval"`
+	FilterKeywords       []string      `yaml:"filter_keywords"`
+}
+
 type Config struct {
-	TelegramBotToken     string        `hcl:"telegram_bot_token" env:"TELEGRAM_BOT_TOKEN" required:"true"`
-	TelegramChannelID    int64         `hcl:"telegram_channel_id" env:"TELEGRAM_CHANNEL_ID" required:"true"`
-	DatabaseDSN          string        `hcl:"database_json" env:"DATABASE_DSN" default:"postgres://postgres:postgres@localhost:5432/feed_rocket_bot?sslmode=disable"`
-	FetchInterval        time.Duration `hcl:"fetch_interval" env:"FETCH_INTERVAL" default:"10m"`
-	NotificationInterval time.Duration `hcl:"notification_interval" env:"NOTIFICATION_INTERVAL" default:"1m"`
-	FilterKeywords       []string      `hcl:"filter_keywords" env:"FILTER_KEYS"`
-	OpenAIKey            string        `hcl:"open_ai_key" env:"OPENAI_KEY"`
-	OpenAIPrompt         string        `hcl:"open_ai_prompt" env:"OPENAI_PROMPT"`
+	DbConfig     DbConfig     `yaml:"db"`
+	BotConfig    BotConfig    `yaml:"bot"`
+	OpenAiConfig OpenAiConfig `yaml:"openai"`
+	ServerConfig ServerConfig `yaml:"server"`
 }
 
 var (
@@ -26,16 +45,24 @@ var (
 
 func Get() Config {
 	once.Do(func() {
-		loader := aconfig.LoaderFor(&cfg, aconfig.Config{
-			EnvPrefix: "FR",
-			Files:     []string{"./config.hcl", "./config.local.hcl"},
-			FileDecoders: map[string]aconfig.FileDecoder{
-				".hcl": aconfighcl.New(),
-			},
-		})
+		file, err := os.Open("config.yml")
+		if err != nil {
+			panic(err)
+		}
+		defer func(file *os.File) {
+			err := file.Close()
+			if err != nil {
+				log.Println(err)
+			}
+		}(file)
 
-		if err := loader.Load(); err != nil {
-			log.Printf("[ERROR] failed to load config file: %v", err)
+		data, err := io.ReadAll(file)
+		if err != nil {
+			panic("failed to read config file: " + err.Error())
+		}
+		err = yaml.Unmarshal(data, &cfg)
+		if err != nil {
+			panic("failed to parse config file: " + err.Error())
 		}
 	})
 
