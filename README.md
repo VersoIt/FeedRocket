@@ -10,8 +10,6 @@ Telegram bot that creates notifications about news from different sites
 
 # Configuration
 
-## YAML
-
 News Feed Bot can be configured with YAML config file. The service is looking for config file in following locations:
 
 - `./config.yaml`
