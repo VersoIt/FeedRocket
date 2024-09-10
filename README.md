@@ -1,6 +1,8 @@
-# FeedRocket bot
+# FeedRocket bot - DEPLOYED
 
 Telegram bot that creates notifications about news from different sites
+
+- [Telegram](https://t.me/golangnewss)
 
 # Features
 
