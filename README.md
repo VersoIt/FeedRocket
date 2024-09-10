@@ -2,7 +2,7 @@
 
 Telegram bot that creates notifications about news from different sites
 
-- [Telegram](https://t.me/golangnewss)
+- [Telegram bot](https://t.me/golangnewss)
 
 # Features
 
